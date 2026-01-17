@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 成熟度評估 | AI Maturity Assessment</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .option-card:hover {
+            border-color: #38bdf8;
+            background-color: #334155;
+            transform: translateY(-2px);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+        }
+        .btn-gradient:hover {
+            opacity: 0.9;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Container -->
+    <div class="w-full max-w-2xl bg-cardbg rounded-2xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-[600px] flex flex-col">
+        
+        <!-- Header / Progress -->
+        <div id="header-section" class="hidden w-full bg-slate-800 p-4 border-b border-slate-700">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-slate-400">進度</span>
+                <span id="progress-text" class="text-sm font-semibold text-brand-400">0%</span>
+            </div>
+            <div class="w-full bg-slate-700 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-brand-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-grow flex flex-col justify-center p-6 md:p-8 relative">
+            
+            <!-- 1. Landing Screen -->
+            <div id="landing-screen" class="text-center space-y-6 fade-in">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-800 mb-4 border border-slate-600">
+                    <i class="fa-solid fa-brain text-4xl text-brand-400"></i>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight">AI 成熟度評估</h1>
+                <p class="text-lg text-slate-400 max-w-md mx-auto">
+                    您處於 AI 轉型的哪個階段？透過 12 個專業問題，分析您的 AI 使用習慣，並獲得量身打造的升級建議。
+                </p>
+                <div class="pt-4">
+                    <button onclick="startQuiz()" class="btn-gradient text-white font-bold py-4 px-10 rounded-full text-lg shadow-lg transition-all transform hover:scale-105">
+                        開始評估 <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+                <div class="text-xs text-slate-500 mt-8">
+                    基於 5 級 AI 成熟度模型 (5-Level AI Maturity Framework)
+                </div>
+            </div>
+
+            <!-- 2. Quiz Screen -->
+            <div id="quiz-screen" class="hidden flex-col space-y-6 fade-in">
+                <div class="space-y-2">
+                    <span id="q-category" class="text-xs font-bold uppercase tracking-wider text-brand-400 bg-slate-800 px-2 py-1 rounded">類別</span>
+                    <h2 id="q-text" class="text-2xl font-bold text-white leading-tight">問題載入中...</h2>
+                </div>
+                
+                <div id="options-container" class="space-y-3">
+                    <!-- Options injected via JS -->
+                </div>
+            </div>
+
+            <!-- 3. Result Screen -->
+            <div id="result-screen" class="hidden flex-col space-y-6 fade-in w-full">
+                <div class="text-center border-b border-slate-700 pb-6">
+                    <p class="text-sm text-slate-400 uppercase tracking-widest mb-2">您的評估結果</p>
+                    <h2 id="result-level-title" class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-purple-500 mb-2">
+                        Level X
+                    </h2>
+                    <p id="result-description" class="text-slate-300 text-lg leading-relaxed max-w-lg mx-auto">
+                        描述文字...
+                    </p>
+                </div>
+
+                <!-- Radar Chart Container -->
+                <div class="w-full h-64 md:h-72 relative">
+                    <canvas id="maturityChart"></canvas>
+                </div>
+
+                <!-- Next Steps Accordion -->
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fa-solid fa-rocket text-brand-400 mr-2"></i> 下一步建議 (Next Steps)
+                    </h3>
+                    <ul id="next-steps-list" class="space-y-3 text-slate-300">
+                        <!-- Steps injected via JS -->
+                    </ul>
+                </div>
+
+                <div class="text-center pt-4">
+                    <button onclick="restartQuiz()" class="text-slate-400 hover:text-white transition-colors underline">
+                        重新測驗
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Data: 5-Level Framework & Questions ---
+        // Categories: Prompting (PE), Workflow/Integration (WI), Mindset/Strategy (MS)
+        
+        const levels = {
+            1: {
+                title: "Level 1: 探索者 (The Explorer)",
+                desc: "您剛開始接觸 AI，主要用於娛樂或隨機對話。您意識到 AI 的存在，但尚未將其整合到工作流程中。",
+                advice: [
+                    "建立習慣：嘗試每天在一個微小的任務中使用 AI（如寫 Email 草稿）。",
+                    "基礎指令：學習「角色設定 + 任務 + 背景」的基本 Prompt 結構。",
+                    "工具探索：除了 ChatGPT，嘗試試用 Claude 或 Gemini 來比較不同模型的特性。"
+                ]
+            },
+            2: {
+                title: "Level 2: 使用者 (The User)",
+                desc: "您將 AI 作為提高效率的輔助工具。您能處理文本摘要、翻譯或基本寫作，依賴 AI 的「直接回答」。",
+                advice: [
+                    "優化指令：學習「少樣本提示 (Few-Shot Prompting)」，給 AI 範例看以提升品質。",
+                    "批判性思維：開始養成查核 AI 幻覺 (Hallucination) 的習慣，不要全盤接受。",
+                    "擴展模態：嘗試使用 AI 生成圖像或解讀數據表格，而不僅僅是處理文字。"
+                ]
+            },
+            3: {
+                title: "Level 3: 操作者 (The Operator)",
+                desc: "您熟悉 Prompt Engineering，能引導 AI 完成較複雜的任務。您了解模型的限制，並能透過迭代優化結果。",
+                advice: [
+                    "思維鏈 (CoT)：學習要求 AI 「一步步思考」，以解決複雜的邏輯問題。",
+                    "結構化輸出：要求 AI 以 Markdown 表格、JSON 或特定格式輸出，以便後續使用。",
+                    "自訂指令：設定 Custom Instructions (系統提示詞) 來固化您的偏好風格。"
+                ]
+            },
+            4: {
+                title: "Level 4: 架構師 (The Architect)",
+                desc: "您不再只是「聊天」，而是「構建工作流」。您使用 API、自動化工具 (Zapier/Make) 或自訂 GPTs 來串接多個步驟。",
+                advice: [
+                    "工作流自動化：學習使用 Make.com 或 Zapier 將 AI 連接到 Gmail、Slack 或 Notion。",
+                    "知識庫整合：開始探索 RAG (檢索增強生成) 的概念，讓 AI 讀取您的私有文件庫。",
+                    "打造 Agent：設計專門針對特定任務的 AI 代理人，賦予其特定知識和權限。"
+                ]
+            },
+            5: {
+                title: "Level 5: 創新者 (The Innovator)",
+                desc: "AI 已與您的業務邏輯深度融合。您可能正在開發自己的應用、微調模型，或管理多個 AI Agents 協作系統。",
+                advice: [
+                    "程式碼整合：深入 Python 與 LangChain/Semantic Kernel 等框架的開發。",
+                    "模型微調：嘗試 Fine-tuning 模型以適應極度專業的領域知識。",
+                    "倫理與治理：思考如何在組織內建立 AI 使用規範與安全護欄。"
+                ]
+            }
+        };
+
+        const questions = [
+            // Category: Prompt Engineering (PE)
+            {
+                text: "當你需要 AI 幫你撰寫文案時，你通常會怎麼下指令？",
+                category: "提示工程 (Prompt Engineering)",
+                dim: "PE", 
+                options: [
+                    { text: "簡單一句話，如「幫我寫一篇關於咖啡的貼文」。", score: 1 },
+                    { text: "提供具體背景、目標受眾和語氣要求。", score: 2 },
+                    { text: "提供範例 (Few-shot)，並要求它先列出大綱再撰寫。", score: 3 },
+                    { text: "設計結構化的 Prompt，包含角色、限制條件、輸出格式，並要求它反思優化。", score: 4 }
+                ]
+            },
+            {
+                text: "如果 AI 給出的答案不如預期，你會怎麼做？",
+                category: "提示工程 (Prompt Engineering)",
+                dim: "PE",
+                options: [
+                    { text: "覺得 AI 不好用，放棄或換一個話題。", score: 1 },
+                    { text: "重新產生 (Regenerate) 幾次試試運氣。", score: 2 },
+                    { text: "修改我的指令，提供更多上下文或糾正它的錯誤。", score: 3 },
+                    { text: "分析它失敗的邏輯，指示它「一步步思考 (Chain of Thought)」來修正推理過程。", score: 4 }
+                ]
+            },
+            {
+                text: "你是否有設定「自訂指令 (Custom Instructions)」或「系統提示詞」？",
+                category: "提示工程 (Prompt Engineering)",
+                dim: "PE",
+                options: [
+                    { text: "那是甚麼？我沒聽過。", score: 1 },
+                    { text: "知道有這個功能，但還沒設定。", score: 2 },
+                    { text: "有設定基本的稱呼或偏好的回答長度。", score: 3 },
+                    { text: "有針對不同任務場景設定多組詳細的角色與輸出規範。", score: 5 } // High impact
+                ]
+            },
+            
+            // Category: Workflow & Integration (WI)
+            {
+                text: "你如何處理重複性的 AI 任務？",
+                category: "工作流整合 (Workflow)",
+                dim: "WI",
+                options: [
+                    { text: "每次都重新手打指令。", score: 1 },
+                    { text: "把常用的指令存在記事本裡複製貼上。", score: 2 },
+                    { text: "建立專屬的 Chat (如 GPTs) 或使用 Prompt 管理工具。", score: 3 },
+                    { text: "使用 API 或自動化工具 (如 Zapier) 自動觸發 AI 處理。", score: 5 }
+                ]
+            },
+            {
+                text: "你在工作中使用 AI 的頻率與深度為何？",
+                category: "工作流整合 (Workflow)",
+                dim: "WI",
+                options: [
+                    { text: "偶爾想到才用，主要用於休閒。", score: 1 },
+                    { text: "每天用，主要用於草擬郵件或翻譯。", score: 2 },
+                    { text: "它是我的副駕駛，參與專案規劃、數據分析和決策。", score: 3 },
+                    { text: "AI 已經嵌入我的工作系統，自動處理後台任務。", score: 4 }
+                ]
+            },
+            {
+                text: "你是否曾將 AI 與外部資料或文件結合？",
+                category: "工作流整合 (Workflow)",
+                dim: "WI",
+                options: [
+                    { text: "沒有，只用它內建的知識。", score: 1 },
+                    { text: "會手動複製貼上文章內容給它讀。", score: 2 },
+                    { text: "使用上傳檔案功能 (PDF/Excel) 讓它分析。", score: 3 },
+                    { text: "使用 RAG 或 API 連接我的知識庫/資料庫。", score: 5 }
+                ]
+            },
+
+            // Category: Technical & Strategy (TS)
+            {
+                text: "對於 AI 可能產生的「幻覺 (錯誤資訊)」，你的態度是？",
+                category: "技術與策略 (Tech & Strategy)",
+                dim: "TS",
+                options: [
+                    { text: "通常相信 AI 說的都是對的。", score: 1 },
+                    { text: "會懷疑，但不知道怎麼驗證。", score: 2 },
+                    { text: "會人工查核關鍵事實，不照單全收。", score: 3 },
+                    { text: "在 Prompt 中要求它引用來源，或使用具備聯網搜尋能力的模型驗證。", score: 4 }
+                ]
+            },
+            {
+                text: "你是否嘗試過「多模態 (Multimodal)」應用？",
+                category: "技術與策略 (Tech & Strategy)",
+                dim: "TS",
+                options: [
+                    { text: "只用文字聊天。", score: 1 },
+                    { text: "偶爾生成圖片好玩。", score: 2 },
+                    { text: "會用 AI 辨識圖片內容、手寫草圖轉代碼或分析圖表。", score: 3 },
+                    { text: "整合語音、視覺與文字模型來解決複雜問題。", score: 4 }
+                ]
+            },
+            {
+                text: "對於新出的 AI 模型或工具，你的學習方式是？",
+                category: "技術與策略 (Tech & Strategy)",
+                dim: "TS",
+                options: [
+                    { text: "不主動關注，等新聞報導。", score: 1 },
+                    { text: "會看 YouTuber 介紹。", score: 2 },
+                    { text: "會主動註冊試用，比較不同模型的差異。", score: 3 },
+                    { text: "閱讀論文或技術文件，思考如何應用到我的業務中。", score: 5 }
+                ]
+            },
+            {
+                text: "如果需要處理極度複雜的任務，你會？",
+                category: "綜合應用",
+                dim: "TS",
+                options: [
+                    { text: "覺得 AI 做不到，自己做。", score: 1 },
+                    { text: "試著問一次，不行就放棄。", score: 2 },
+                    { text: "將任務拆解成多個子任務 (Decomposition)，分段讓 AI 執行。", score: 4 },
+                    { text: "編寫程式腳本或使用 Agent 框架來自動協調執行。", score: 5 }
+                ]
+            }
+        ];
+
+        // --- App State ---
+        let currentQuestionIndex = 0;
+        let scores = {
+            PE: 0, // Prompt Engineering
+            WI: 0, // Workflow Integration
+            TS: 0  // Tech & Strategy
+        };
+        // Max possible scores per dimension (approximate calculation based on max options)
+        // PE: 3 questions, max ~13 pts
+        // WI: 3 questions, max ~13 pts
+        // TS: 4 questions, max ~18 pts
+        // We will normalize to 0-10 for the chart.
+
+        // --- Functions ---
+
+        function startQuiz() {
+            document.getElementById('landing-screen').classList.add('hidden');
+            document.getElementById('header-section').classList.remove('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('quiz-screen').classList.add('flex');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            const qScreen = document.getElementById('quiz-screen');
+            
+            // Animation reset
+            qScreen.classList.remove('fade-in');
+            void qScreen.offsetWidth; // trigger reflow
+            qScreen.classList.add('fade-in');
+
+            document.getElementById('q-category').innerText = q.category;
+            document.getElementById('q-text').innerText = q.text;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `option-card w-full text-left p-4 rounded-xl border border-slate-600 bg-slate-800/50 text-slate-200 transition-all duration-200 group`;
+                btn.onclick = () => handleAnswer(opt.score, q.dim);
+                
+                btn.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full border border-slate-500 group-hover:border-brand-400 group-hover:bg-brand-400 flex items-center justify-center mr-3 transition-colors">
+                            <div class="w-2 h-2 rounded-full bg-white opacity-0 group-hover:opacity-100"></div>
+                        </div>
+                        <span class="text-base md:text-lg">${opt.text}</span>
+                    </div>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            updateProgress();
+        }
+
+        function handleAnswer(score, dimension) {
+            scores[dimension] += score;
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').innerText = `${Math.round(progress)}%`;
+        }
+
+        function calculateLevel(totalScore) {
+            // Max Score approx: 44. Min Score: 10.
+            // Level 1: 10-15
+            // Level 2: 16-22
+            // Level 3: 23-30
+            // Level 4: 31-38
+            // Level 5: 39+
+            
+            if (totalScore <= 15) return 1;
+            if (totalScore <= 22) return 2;
+            if (totalScore <= 30) return 3;
+            if (totalScore <= 38) return 4;
+            return 5;
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('header-section').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('result-screen').classList.add('flex');
+
+            const totalScore = scores.PE + scores.WI + scores.TS;
+            const levelNum = calculateLevel(totalScore);
+            const levelData = levels[levelNum];
+
+            // Render Text
+            document.getElementById('result-level-title').innerText = levelData.title;
+            document.getElementById('result-description').innerText = levelData.desc;
+
+            // Render Advice
+            const adviceList = document.getElementById('next-steps-list');
+            adviceList.innerHTML = '';
+            levelData.advice.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "flex items-start p-2 rounded hover:bg-slate-700/30 transition";
+                li.innerHTML = `<i class="fa-solid fa-check text-brand-500 mt-1 mr-3"></i><span>${item}</span>`;
+                adviceList.appendChild(li);
+            });
+
+            // Render Chart
+            renderChart(scores);
+        }
+
+        function renderChart(scores) {
+            const ctx = document.getElementById('maturityChart').getContext('2d');
+            
+            // Normalize scores for chart (0-10 scale approximation)
+            // PE max ~13 -> factor 0.76
+            // WI max ~13 -> factor 0.76
+            // TS max ~18 -> factor 0.55
+            const normPE = Math.min(10, (scores.PE / 13) * 10);
+            const normWI = Math.min(10, (scores.WI / 13) * 10);
+            const normTS = Math.min(10, (scores.TS / 18) * 10);
+
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['提示工程 (Prompting)', '工作流整合 (Workflow)', '技術與策略 (Strategy)'],
+                    datasets: [{
+                        label: '能力維度',
+                        data: [normPE, normWI, normTS],
+                        fill: true,
+                        backgroundColor: 'rgba(56, 189, 248, 0.2)', // brand-400 with opacity
+                        borderColor: '#38bdf8',
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#38bdf8',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#38bdf8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#334155' },
+                            grid: { color: '#334155' },
+                            pointLabels: {
+                                color: '#94a3b8',
+                                font: { size: 12, family: 'Inter' }
+                            },
+                            ticks: { display: false, max: 10, min: 0 },
+                            suggestedMin: 0,
+                            suggestedMax: 10
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            scores = { PE: 0, WI: 0, TS: 0 };
+            document.getElementById('result-screen').classList.add('hidden');
+            startQuiz();
+        }
+    </script>
+</body>
+</html>
